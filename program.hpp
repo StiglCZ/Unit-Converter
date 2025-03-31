@@ -12,6 +12,7 @@ class UnitConvert : public Gtk::Window {
     
     private:
     void ConvertClicked();
+    void TypesChanged();
     class ModelColumns : public Gtk::TreeModel::ColumnRecord {
         public:
         ModelColumns() { add(primary); }
@@ -19,14 +20,16 @@ class UnitConvert : public Gtk::Window {
     };
 
     // Widgets
+    Gtk::Grid g;
     Gtk::Entry input, output;
     Gtk::Button convertButton;
-    Gtk::ComboBox src, dst;
-    Gtk::Label srcLabel, dstLabel, outLabel;
+    Gtk::ComboBox type, src, dst;
+    Gtk::Label typeLabel, srcLabel, dstLabel, outLabel;
     
     // For comboboxes
-    Gtk::Grid g;
-    Glib::RefPtr<Gtk::ListStore> formats;
+    ushort SelectedFormat = 0;
+    std::vector<Glib::RefPtr<Gtk::ListStore>> formats;
+    Glib::RefPtr<Gtk::ListStore> MainFormats;
     ModelColumns columns;
     
 };

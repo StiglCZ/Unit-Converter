@@ -1,44 +1,19 @@
 #include "program.hpp"
 #include "gtkmm/enums.h"
+#include "gtkmm/label.h"
 #include "gtkmm/treeiter.h"
 #include <cstdlib>
 #include <iostream>
 #include <limits>
 #include <sstream>
-
-const std::vector<std::string> FormatNames = {
-    "nanometers",
-    "centimeters",
-    "inches",
-    "feet",
-    "yards",
-    "meters",
-    "kilometers",
-    "miles",
-    "megameters",
-    "gigameters",
-};
-
-const std::vector<float> FormatValues = {
-    1.000000,
-    1.000e+7,
-    2.540e+7,
-    3.048e+8,
-    9.144e+8,
-    1.000e+9,
-    1.00e+12,
-    1.609344e+12,
-    1.00e+15,
-    1.00e+18,
-};
+#include "types.hh"
 
 UnitConvert::UnitConvert() {
-    g = Gtk::Grid();
-
     // Add labels to everything
     srcLabel = Gtk::Label("From: ");
     dstLabel = Gtk::Label("  To: ");
     outLabel = Gtk::Label("Result:");
+    typeLabel= Gtk::Label("Meassurement: ");
     convertButton.set_label("Convert");
 
     // Input textbox(RW)
@@ -54,47 +29,81 @@ UnitConvert::UnitConvert() {
     output.set_can_focus(false);
 
     // Fill comboboxes
-    formats = Gtk::ListStore::create(columns);
     Gtk::TreeIter<Gtk::TreeRow> iter;
     Gtk::TreeRow row;
-
-    for(std::string key : FormatNames) {
-        iter = formats->append();
-        row = *iter;
-        row[columns.primary] = key;
+    MainFormats = Gtk::ListStore::create(columns);
+    
+    for(auto ConversionType : ConversionTypes) {
+        formats.push_back(Gtk::ListStore::create(columns));
+        Glib::RefPtr<Gtk::ListStore>& ref = formats[formats.size() -1];
+        for(std::string key : ConversionType.second.first) {
+            iter = ref->append();
+            row = *iter;
+            row[columns.primary] = key;
+        }
+        
+        (*MainFormats->append())[columns.primary] =  ConversionType.first;
     }
 
-    src.set_model(formats);
+    src.set_model(formats[SelectedFormat]);
     src.pack_start(columns.primary);
 
-    dst.set_model(formats);
+    dst.set_model(formats[SelectedFormat]);
     dst.pack_start(columns.primary);
 
-    src.set_active(1);
-    dst.set_active(2);
+    src.set_active(0);
+    dst.set_active(1);
 
+    type.set_model(MainFormats);
+    type.pack_start(columns.primary);
+    type.set_active(0);    
+    
     // Main container settings
-    set_title("App");
-    set_default_size(600, 300);
+    g = Gtk::Grid();
+    set_title("Unit Convertor");
+    set_default_size(350, 200);
     set_child(g);
 
-    g.attach(input,         0, 0, 3, 1);
-    g.attach(convertButton, 3, 0, 1, 1);
+    g.attach(typeLabel, 0, 0, 2, 1);
+    g.attach(type,      2, 0, 1, 1);
 
-    g.attach(outLabel, 0, 1, 1, 1);
-    g.attach(output,   1, 1, 3, 1);
+    g.attach(srcLabel, 0, 1, 1, 1);
+    g.attach(src,      1, 1, 3, 1);
+    
+    g.attach(dstLabel, 0, 2, 1, 1);
+    g.attach(dst,      1, 2, 3, 1);
+    
+    g.attach(input,         0, 3, 3, 1);
+    g.attach(convertButton, 3, 3, 1, 1);
 
-    g.attach(srcLabel, 0, 2, 1, 1);
-    g.attach(src,      1, 2, 1, 1);
-    g.attach(dstLabel, 2, 2, 1, 1);
-    g.attach(dst,      3, 2, 1, 1);
+    g.attach(outLabel, 0, 4, 1, 1);
+    g.attach(output,   1, 4, 3, 1);
 
+    
+    
     // Setup events
     convertButton.signal_clicked().connect(sigc::mem_fun(*this, &UnitConvert::ConvertClicked));
+    type.signal_changed().connect(sigc::mem_fun(*this, &UnitConvert::TypesChanged));
 }
 
 UnitConvert::~UnitConvert() {
     
+}
+
+void UnitConvert::TypesChanged() {
+    SelectedFormat = type.get_active_row_number();
+
+    src.clear();
+    src.set_model(formats[SelectedFormat]);
+    src.pack_start(columns.primary);
+    src.set_active(0);
+
+    dst.clear();
+    dst.set_model(formats[SelectedFormat]);
+    dst.pack_start(columns.primary);
+    dst.set_active(0);
+
+    output.set_text("");
 }
 
 void UnitConvert::ConvertClicked() {
@@ -105,16 +114,29 @@ void UnitConvert::ConvertClicked() {
 
     // Calculate the result
     char *pEnd;
-    double nanometers = strtod(str.c_str(), &pEnd)
-        * FormatValues[src.get_active_row_number()]
-        / FormatValues[dst.get_active_row_number()];
+    auto it = ConversionTypes.begin();
+    std::advance(it, SelectedFormat);
+    std::vector<double> Values = it->second.second;
+    double result = strtod(str.c_str(), &pEnd)
+        * Values[src.get_active_row_number()]
+        / Values[dst.get_active_row_number()];
 
+    // Log the result aswell
+    std::cout
+        << str.c_str()
+        << it->second.first[src.get_active_row_number()]
+        << " = "
+        << std::fixed << result
+        << it->second.first[dst.get_active_row_number()]
+        << std::endl;
+    
     // Convert to high precision string
-    std::ostringstream os;
-    os.precision(std::numeric_limits<double>::digits10 + 2);
-    os << std::fixed << nanometers;
-    std::string out = std::move(os).str();
-
+    std::string out;
+    std::stringstream ss;
+    ss.precision(std::numeric_limits<double>::digits10 + 2);
+    ss << std::fixed << result;
+    ss >> out;
+    
     // Remove trailing zeroes
     if(out.find('.') != std::string::npos) {
         int last = out.size();
