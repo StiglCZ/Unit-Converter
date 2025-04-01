@@ -59,11 +59,11 @@ UnitConvert::UnitConvert() {
     type.set_active(0);    
     
     // Main container settings
+    g = Gtk::Grid();
     set_title("Unit Convertor");
     set_default_size(350, 200);
     set_child(g);
 
-    g = Gtk::Grid();
     g.set_row_spacing(1);
     g.set_column_spacing(1);
 
