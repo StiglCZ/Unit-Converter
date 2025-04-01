@@ -10,10 +10,10 @@
 
 UnitConvert::UnitConvert() {
     // Add labels to everything
-    srcLabel = Gtk::Label("From: ");
-    dstLabel = Gtk::Label("  To: ");
+    srcLabel = Gtk::Label("From:");
+    dstLabel = Gtk::Label("To:");
     outLabel = Gtk::Label("Result:");
-    typeLabel= Gtk::Label("Meassurement: ");
+    typeLabel= Gtk::Label("Meassurement:");
     convertButton.set_label("Convert");
 
     // Input textbox(RW)
@@ -59,10 +59,13 @@ UnitConvert::UnitConvert() {
     type.set_active(0);    
     
     // Main container settings
-    g = Gtk::Grid();
     set_title("Unit Convertor");
     set_default_size(350, 200);
     set_child(g);
+
+    g = Gtk::Grid();
+    g.set_row_spacing(1);
+    g.set_column_spacing(1);
 
     g.attach(typeLabel, 0, 0, 2, 1);
     g.attach(type,      2, 0, 1, 1);
