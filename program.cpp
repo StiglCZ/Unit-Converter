@@ -6,6 +6,7 @@
 #include <iostream>
 #include <limits>
 #include <sstream>
+#include "sigc++/functors/mem_fun.h"
 #include "types.hh"
 
 UnitConvert::UnitConvert() {
@@ -56,7 +57,8 @@ UnitConvert::UnitConvert() {
 
     type.set_model(MainFormats);
     type.pack_start(columns.primary);
-    type.set_active(0);    
+    type.set_active(0);
+    
     
     // Main container settings
     g = Gtk::Grid();
@@ -81,12 +83,11 @@ UnitConvert::UnitConvert() {
 
     g.attach(outLabel, 0, 4, 1, 1);
     g.attach(output,   1, 4, 3, 1);
-
-    
     
     // Setup events
     convertButton.signal_clicked().connect(sigc::mem_fun(*this, &UnitConvert::ConvertClicked));
     type.signal_changed().connect(sigc::mem_fun(*this, &UnitConvert::TypesChanged));
+    input.signal_changed().connect(sigc::mem_fun(*this, &UnitConvert::ConvertClicked));
 }
 
 UnitConvert::~UnitConvert() {
