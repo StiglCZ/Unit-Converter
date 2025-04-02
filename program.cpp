@@ -124,15 +124,6 @@ void UnitConvert::ConvertClicked() {
     double result = strtod(str.c_str(), &pEnd)
         * Values[src.get_active_row_number()]
         / Values[dst.get_active_row_number()];
-
-    // Log the result aswell
-    std::cout
-        << str.c_str()
-        << it->second.first[src.get_active_row_number()]
-        << " = "
-        << std::fixed << result
-        << it->second.first[dst.get_active_row_number()]
-        << std::endl;
     
     // Convert to high precision string
     std::string out;
@@ -153,5 +144,6 @@ void UnitConvert::ConvertClicked() {
 
 int main(int argc, char** argv) {
     auto app = Gtk::Application::create("org.test.unitconvert");
+    
     return app->make_window_and_run<UnitConvert>(argc, argv);
 }
