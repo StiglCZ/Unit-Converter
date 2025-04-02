@@ -4,15 +4,16 @@
 #include "gtkmm/liststore.h"
 #include "gtkmm/treemodelcolumn.h"
 #include <gtkmm-4.0/gtkmm.h>
-
+#include <fstream>
 class UnitConvert : public Gtk::Window {
     public:
     UnitConvert();
     ~UnitConvert() override;
     
     private:
-    void ConvertClicked();
+    void Convert();
     void TypesChanged();
+    void SaveInHistory();
     class ModelColumns : public Gtk::TreeModel::ColumnRecord {
         public:
         ModelColumns() { add(primary); }
@@ -25,7 +26,8 @@ class UnitConvert : public Gtk::Window {
     Gtk::Button convertButton;
     Gtk::ComboBox type, src, dst;
     Gtk::Label typeLabel, srcLabel, dstLabel, outLabel;
-    
+    std::ofstream historyWriter;
+
     // For comboboxes
     ushort SelectedFormat = 0;
     std::vector<Glib::RefPtr<Gtk::ListStore>> formats;

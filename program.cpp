@@ -3,6 +3,7 @@
 #include "gtkmm/label.h"
 #include "gtkmm/treeiter.h"
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <limits>
 #include <sstream>
@@ -10,12 +11,14 @@
 #include "types.hh"
 
 UnitConvert::UnitConvert() {
+    historyWriter = std::ofstream(".unitcv_history");
+
     // Add labels to everything
     srcLabel = Gtk::Label("From:");
     dstLabel = Gtk::Label("To:");
     outLabel = Gtk::Label("Result:");
     typeLabel= Gtk::Label("Meassurement:");
-    convertButton.set_label("Convert");
+    convertButton.set_label("Save");
 
     // Input textbox(RW)
     input = Gtk::Entry();
@@ -85,13 +88,18 @@ UnitConvert::UnitConvert() {
     g.attach(output,   1, 4, 3, 1);
     
     // Setup events
-    convertButton.signal_clicked().connect(sigc::mem_fun(*this, &UnitConvert::ConvertClicked));
     type.signal_changed().connect(sigc::mem_fun(*this, &UnitConvert::TypesChanged));
-    input.signal_changed().connect(sigc::mem_fun(*this, &UnitConvert::ConvertClicked));
+    convertButton.signal_clicked().connect(sigc::mem_fun(*this, &UnitConvert::Convert), false);
+
+    convertButton.signal_clicked().connect(sigc::mem_fun(*this, &UnitConvert::SaveInHistory), true);
+    type.signal_changed().connect(sigc::mem_fun(*this, &UnitConvert::Convert));
+    dst.  signal_changed().connect(sigc::mem_fun(*this, &UnitConvert::Convert));
+    src.  signal_changed().connect(sigc::mem_fun(*this, &UnitConvert::Convert));
+    input.signal_changed().connect(sigc::mem_fun(*this, &UnitConvert::Convert));
 }
 
 UnitConvert::~UnitConvert() {
-    
+    historyWriter.close();
 }
 
 void UnitConvert::TypesChanged() {
@@ -110,7 +118,7 @@ void UnitConvert::TypesChanged() {
     output.set_text("");
 }
 
-void UnitConvert::ConvertClicked() {
+void UnitConvert::Convert() {
     int pos = 0;
     std::string str = input.get_text();
     while((pos = str.find(',', pos)) != std::string::npos)
@@ -140,6 +148,14 @@ void UnitConvert::ConvertClicked() {
     }
 
     output.set_text(out);
+}
+
+void UnitConvert::SaveInHistory() {
+    historyWriter
+        << input.get_text().c_str()
+        << ConversionTypes.begin()->second.first[src.get_active_row_number()] << " = "
+        << std::fixed << output.get_text()
+        << ConversionTypes.begin()->second.first[dst.get_active_row_number()] << std::endl;
 }
 
 int main(int argc, char** argv) {
